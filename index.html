@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="uk" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Простий помічник підрахунку очок Kingdomino українською." />
-    <meta name="theme-color" content="#1b3d2f" />
+    <meta name="theme-color" content="#e8f0e6" />
     <title>Kingdomino · Підрахунок</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -12,12 +12,16 @@
       href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap"
       rel="stylesheet"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
     <div class="atmosphere" aria-hidden="true"></div>
 
-    <div class="app">
+    <main class="app">
       <!-- HOME -->
       <section id="view-home" class="view view--home is-active" data-view="home">
         <header class="hero">
@@ -39,7 +43,7 @@
           <button type="button" class="btn btn--text btn--danger-text" id="btn-reset">Скинути</button>
         </header>
 
-        <p class="lead" id="leader-banner">Додайте гравців, щоб почати.</p>
+        <p class="lead" id="leader-banner" role="status">Поки всі мають 0 — введіть області.</p>
 
         <ul class="players" id="players-list" aria-live="polite"></ul>
 
@@ -106,7 +110,7 @@
           <button type="button" class="btn btn--primary" data-nav="table">До столу</button>
         </div>
       </section>
-    </div>
+    </main>
 
     <dialog id="confirm-dialog" class="dialog">
       <form method="dialog" class="dialog__inner">
