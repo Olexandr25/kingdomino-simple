@@ -1,6 +1,14 @@
 (function () {
   const { createPlayer, createRegion, loadState, saveState, clearState } = KingdominoStorage;
-  const { TERRAINS, clampInt, regionScore, playerScore, comparePlayers } = KingdominoScoring;
+  const {
+    TERRAINS,
+    clampInt,
+    normalizeTerrain,
+    regionScore,
+    playerScore,
+    playerHasInput,
+    comparePlayers,
+  } = KingdominoScoring;
 
   const MAX_PLAYERS = 4;
   const MIN_PLAYERS = 2;
@@ -39,6 +47,14 @@
       state.players = [createPlayer("Гравець 1"), createPlayer("Гравець 2")];
       persist();
     }
+    state.players.forEach((player) => {
+      if (!Array.isArray(player.regions) || player.regions.length === 0) {
+        player.regions = [createRegion()];
+      }
+      player.regions.forEach((region) => {
+        region.terrain = normalizeTerrain(region.terrain);
+      });
+    });
   }
 
   function showView(name) {
@@ -95,17 +111,12 @@
   }
 
   function renderPlayers() {
+    ensureStarterPlayers();
     renderLeaderBanner();
     const { leaders, maxScore } = comparePlayers(state.players);
     const leaderIds = new Set(leaders.map((l) => l.id));
 
     els.playersList.innerHTML = "";
-
-    if (state.players.length === 0) {
-      els.playersList.innerHTML = '<li class="empty">Ще немає гравців.</li>';
-      els.btnAddPlayer.disabled = false;
-      return;
-    }
 
     state.players.forEach((player, index) => {
       const score = playerScore(player);
@@ -116,7 +127,16 @@
       const canRemove = state.players.length > MIN_PLAYERS;
 
       li.innerHTML = `
-        <input class="player__name" type="text" maxlength="24" aria-label="Імʼя гравця ${index + 1}" value="${escapeAttr(player.name)}" />
+        <label class="player__label" for="player-name-${player.id}">Імʼя</label>
+        <input
+          id="player-name-${player.id}"
+          class="player__name"
+          type="text"
+          maxlength="24"
+          autocomplete="off"
+          aria-label="Імʼя гравця ${index + 1}"
+          value="${escapeAttr(player.name)}"
+        />
         <span class="player__score" aria-label="Очки">${score}</span>
         <div class="player__meta">
           ${maxScore > 0 && leaderIds.has(player.id) ? '<span class="player__badge">Лідер</span>' : ""}
@@ -133,6 +153,13 @@
     els.btnAddPlayer.disabled = state.players.length >= MAX_PLAYERS;
   }
 
+  function terrainOptions(selected) {
+    const current = normalizeTerrain(selected);
+    return TERRAINS.map(
+      (t) => `<option value="${t.value}" ${t.value === current ? "selected" : ""}>${t.label}</option>`
+    ).join("");
+  }
+
   function renderRegions() {
     const player = getActivePlayer();
     if (!player) {
@@ -141,31 +168,27 @@
       return;
     }
 
+    if (!player.regions.length) {
+      player.regions.push(createRegion());
+      persist();
+    }
+
     els.scorePlayerName.textContent = player.name.trim() || "Гравець";
     els.scoreTotal.textContent = String(playerScore(player));
     els.regionsList.innerHTML = "";
 
-    if (player.regions.length === 0) {
-      const empty = document.createElement("li");
-      empty.className = "empty";
-      empty.textContent = "Додайте область: клітинки та корони.";
-      els.regionsList.appendChild(empty);
-      return;
-    }
+    const canRemoveRegion = player.regions.length > 1;
 
     player.regions.forEach((region, index) => {
       const li = document.createElement("li");
       li.className = "region";
       li.dataset.id = region.id;
-
-      const options = TERRAINS.map(
-        (t) => `<option value="${t.value}" ${t.value === region.terrain ? "selected" : ""}>${t.label}</option>`
-      ).join("");
+      region.terrain = normalizeTerrain(region.terrain);
 
       li.innerHTML = `
-        <div class="field">
-          <label for="terrain-${region.id}">Тип</label>
-          <select id="terrain-${region.id}" data-field="terrain">${options}</select>
+        <div class="field field--terrain">
+          <label for="terrain-${region.id}">Місцевість</label>
+          <select id="terrain-${region.id}" data-field="terrain" required>${terrainOptions(region.terrain)}</select>
         </div>
         <div class="field">
           <label for="tiles-${region.id}">Клітинки</label>
@@ -175,7 +198,7 @@
           <label for="crowns-${region.id}">Корони</label>
           <input id="crowns-${region.id}" data-field="crowns" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.crowns, 0, 25, 0)}" />
         </div>
-        <button type="button" class="btn btn--icon" data-action="remove-region" aria-label="Видалити область ${index + 1}">×</button>
+        <button type="button" class="btn btn--icon" data-action="remove-region" aria-label="Видалити область ${index + 1}" ${canRemoveRegion ? "" : "disabled"}>×</button>
         <p class="region__sub">Очки області: <strong>${regionScore(region)}</strong></p>
       `;
 
@@ -204,8 +227,7 @@
     const player = state.players.find((p) => p.id === playerId);
     if (!player) return;
 
-    const hasScore = playerScore(player) > 0 || (player.regions && player.regions.length > 0);
-    if (hasScore) {
+    if (playerHasInput(player)) {
       const ok = await askConfirm(`Видалити гравця «${player.name.trim() || "Без імені"}» з уже введеними очками?`);
       if (!ok) return;
     }
@@ -223,6 +245,9 @@
     if (!player.regions.length) {
       player.regions.push(createRegion());
     }
+    player.regions.forEach((region) => {
+      region.terrain = normalizeTerrain(region.terrain);
+    });
     persist();
     showView("score");
     renderRegions();
@@ -239,6 +264,8 @@
   async function removeRegion(regionId) {
     const player = getActivePlayer();
     if (!player) return;
+    if (player.regions.length <= 1) return;
+
     const region = player.regions.find((r) => r.id === regionId);
     if (!region) return;
 
@@ -248,6 +275,9 @@
     }
 
     player.regions = player.regions.filter((r) => r.id !== regionId);
+    if (!player.regions.length) {
+      player.regions.push(createRegion());
+    }
     persist();
     renderRegions();
   }
@@ -268,7 +298,6 @@
     renderPlayers();
   }
 
-  // Events
   document.querySelectorAll("[data-nav]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const target = btn.getAttribute("data-nav");
@@ -336,7 +365,7 @@
 
     const key = field.dataset.field;
     if (key === "terrain") {
-      region.terrain = field.value;
+      region.terrain = normalizeTerrain(field.value);
     } else if (key === "tiles") {
       region.tiles = clampInt(field.value, 0, 25, 0);
     } else if (key === "crowns") {
@@ -349,15 +378,20 @@
     if (sub) sub.textContent = String(regionScore(region));
   });
 
+  els.regionsList.addEventListener("change", (event) => {
+    const field = event.target.closest('[data-field="terrain"]');
+    if (!field) return;
+    field.dispatchEvent(new Event("input", { bubbles: true }));
+  });
+
   els.regionsList.addEventListener("click", (event) => {
     const btn = event.target.closest('[data-action="remove-region"]');
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     const li = btn.closest(".region");
     if (!li) return;
     removeRegion(li.dataset.id);
   });
 
-  // Boot
   ensureStarterPlayers();
   const initial = state.lastView === "table" || state.lastView === "rules" ? state.lastView : "home";
   if (initial === "table") {

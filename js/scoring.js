@@ -1,18 +1,23 @@
 (function (global) {
+  /** Fixed Kingdomino terrain types — always shown in selects. */
   const TERRAINS = [
-    { value: "", label: "—" },
-    { value: "field", label: "Поле" },
     { value: "forest", label: "Ліс" },
+    { value: "field", label: "Поле" },
     { value: "water", label: "Вода" },
-    { value: "pasture", label: "Луг" },
     { value: "swamp", label: "Болото" },
     { value: "mine", label: "Шахта" },
+    { value: "pasture", label: "Луг" },
   ];
 
   function clampInt(value, min, max, fallback) {
     const n = Number.parseInt(value, 10);
     if (Number.isNaN(n)) return fallback;
     return Math.min(max, Math.max(min, n));
+  }
+
+  function normalizeTerrain(value) {
+    if (TERRAINS.some((t) => t.value === value)) return value;
+    return TERRAINS[0].value;
   }
 
   function regionScore(region) {
@@ -24,6 +29,17 @@
   function playerScore(player) {
     if (!player || !Array.isArray(player.regions)) return 0;
     return player.regions.reduce((sum, region) => sum + regionScore(region), 0);
+  }
+
+  function regionHasInput(region) {
+    if (!region) return false;
+    return clampInt(region.tiles, 0, 25, 0) > 0 || clampInt(region.crowns, 0, 25, 0) > 0;
+  }
+
+  function playerHasInput(player) {
+    if (!player || !Array.isArray(player.regions)) return false;
+    if (playerScore(player) > 0) return true;
+    return player.regions.some(regionHasInput);
   }
 
   function comparePlayers(players) {
@@ -51,14 +67,17 @@
 
   function terrainLabel(value) {
     const found = TERRAINS.find((t) => t.value === value);
-    return found ? found.label : "—";
+    return found ? found.label : TERRAINS[0].label;
   }
 
   global.KingdominoScoring = {
     TERRAINS,
     clampInt,
+    normalizeTerrain,
     regionScore,
     playerScore,
+    regionHasInput,
+    playerHasInput,
     comparePlayers,
     terrainLabel,
   };
