@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="description" content="Простий помічник підрахунку очок Kingdomino українською." />
+    <meta name="theme-color" content="#1b3d2f" />
+    <title>Kingdomino · Підрахунок</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <div class="atmosphere" aria-hidden="true"></div>
+
+    <div class="app">
+      <!-- HOME -->
+      <section id="view-home" class="view view--home is-active" data-view="home">
+        <header class="hero">
+          <p class="hero__eyebrow">Класичне 5×5</p>
+          <h1 class="hero__brand">Kingdomino</h1>
+          <p class="hero__lead">Порахуйте очки за столом і порівняйте, хто попереду — без сітки й без фото.</p>
+          <div class="hero__actions">
+            <button type="button" class="btn btn--primary" data-nav="table">Порахувати</button>
+            <button type="button" class="btn btn--ghost" data-nav="rules">Правила</button>
+          </div>
+        </header>
+      </section>
+
+      <!-- TABLE -->
+      <section id="view-table" class="view" data-view="table" hidden>
+        <header class="bar">
+          <button type="button" class="btn btn--text" data-nav="home" aria-label="На головну">← Назад</button>
+          <h2 class="bar__title">Стіл</h2>
+          <button type="button" class="btn btn--text btn--danger-text" id="btn-reset">Скинути</button>
+        </header>
+
+        <p class="lead" id="leader-banner">Додайте гравців, щоб почати.</p>
+
+        <ul class="players" id="players-list" aria-live="polite"></ul>
+
+        <div class="sticky-actions">
+          <button type="button" class="btn btn--secondary" id="btn-add-player">+ Гравець</button>
+          <button type="button" class="btn btn--ghost" data-nav="rules">Правила</button>
+        </div>
+      </section>
+
+      <!-- SCORE -->
+      <section id="view-score" class="view" data-view="score" hidden>
+        <header class="bar">
+          <button type="button" class="btn btn--text" data-nav="table" aria-label="До столу">← Стіл</button>
+          <h2 class="bar__title" id="score-player-name">Гравець</h2>
+          <span class="bar__spacer"></span>
+        </header>
+
+        <p class="formula">Очки = клітинки × корони в області</p>
+        <p class="total-line">Підсумок: <strong id="score-total">0</strong></p>
+
+        <ul class="regions" id="regions-list"></ul>
+
+        <div class="sticky-actions">
+          <button type="button" class="btn btn--secondary" id="btn-add-region">+ Область</button>
+          <button type="button" class="btn btn--primary" id="btn-save-score">Зберегти</button>
+        </div>
+      </section>
+
+      <!-- RULES -->
+      <section id="view-rules" class="view view--rules" data-view="rules" hidden>
+        <header class="bar">
+          <button type="button" class="btn btn--text" id="btn-rules-back" aria-label="Назад">← Назад</button>
+          <h2 class="bar__title">Правила</h2>
+          <span class="bar__spacer"></span>
+        </header>
+
+        <article class="prose">
+          <h3>Як грати (коротко)</h3>
+          <p>
+            Кожен гравець будує королівство <strong>5×5</strong> навколо замку. На ході обираєте доміно з
+            черги й ставите його так, щоб торкалося вже збудованої території по типу місцевості (або замку).
+          </p>
+
+          <h3>Як рахувати очки</h3>
+          <p>
+            Знайдіть області одного типу місцевості (ліс, поле, вода, болото, шахта, луг). Для кожної області:
+          </p>
+          <p class="prose__formula">клітинки × корони в цій області</p>
+          <p>Сумуйте всі області — це ваші очки. Область без корон дає 0.</p>
+
+          <h3>Приклад</h3>
+          <p>
+            Ліс із 4 клітинок і 2 коронами = <strong>8</strong>. Окреме поле з 3 клітинок без корон = <strong>0</strong>.
+            Разом: 8.
+          </p>
+
+          <p class="prose__note">
+            Цей помічник не малює сітку: введіть області вручну після партії. Збереження на цьому пристрої
+            діє добу.
+          </p>
+        </article>
+
+        <div class="sticky-actions">
+          <button type="button" class="btn btn--primary" data-nav="table">До столу</button>
+        </div>
+      </section>
+    </div>
+
+    <dialog id="confirm-dialog" class="dialog">
+      <form method="dialog" class="dialog__inner">
+        <p id="confirm-message" class="dialog__message"></p>
+        <div class="dialog__actions">
+          <button type="submit" value="cancel" class="btn btn--ghost">Скасувати</button>
+          <button type="submit" value="confirm" class="btn btn--danger" id="confirm-ok">Підтвердити</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="js/storage.js" defer></script>
+    <script src="js/scoring.js" defer></script>
+    <script src="js/app.js" defer></script>
+  </body>
+</html>
