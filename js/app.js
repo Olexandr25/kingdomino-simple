@@ -1,5 +1,16 @@
 (function () {
-  const { createPlayer, createRegion, loadState, saveState, clearState } = KingdominoStorage;
+  const {
+    createPlayer,
+    createRegion,
+    loadState,
+    saveState,
+    clearState,
+    PLAYER_COLORS,
+    normalizeColor,
+    takenColors,
+    nextAvailableColor,
+    assignUniqueColors,
+  } = KingdominoStorage;
   const {
     TERRAINS,
     clampInt,
@@ -13,6 +24,40 @@
 
   const MAX_PLAYERS = 4;
   const MIN_PLAYERS = 2;
+
+  /** Fun Ukrainian royal / animal king nicknames. */
+  const KING_NAMES = [
+    "Король Бобер",
+    "Цар Їжак",
+    "Князь Кабан",
+    "Король Гусак",
+    "Імператор Хомʼяк",
+    "Королева Лисиця",
+    "Княгиня Сова",
+    "Король Баран",
+    "Цар Воробей",
+    "Князь Ведмідь",
+    "Король Качур",
+    "Барон Їжачок",
+    "Герцог Борсук",
+    "Король Курка",
+    "Цар Осел",
+    "Князь Кріт",
+    "Королева Качка",
+    "Імператриця Білка",
+    "Король Пес",
+    "Цар Кіт",
+    "Князь Заєць",
+    "Король Вовк",
+    "Баронеса Гуска",
+    "Герцогиня Ластівка",
+    "Король Їжачисько",
+    "Цариця Миша",
+    "Князь Бугай",
+    "Король Кабанчик",
+    "Граф Ховрах",
+    "Королева Сорока",
+  ];
 
   const els = {
     views: {
@@ -45,18 +90,71 @@
   }
 
   function ensureStarterPlayers() {
+    let dirty = false;
     if (state.players.length === 0) {
-      state.players = [createPlayer("Гравець 1"), createPlayer("Гравець 2")];
-      persist();
+      const p1 = createPlayer("Гравець 1", "pink", []);
+      const p2 = createPlayer("Гравець 2", "yellow", [p1]);
+      state.players = [p1, p2];
+      dirty = true;
     }
+
+    const needsColorFix = state.players.some((p, i, all) => {
+      const color = normalizeColor(p.color);
+      if (!color) return true;
+      return all.some((other, j) => j !== i && other.color === color);
+    });
+    if (needsColorFix) {
+      state.players = assignUniqueColors(state.players);
+      dirty = true;
+    }
+
     state.players.forEach((player) => {
       if (!Array.isArray(player.regions) || player.regions.length === 0) {
         player.regions = [createRegion()];
+        dirty = true;
       }
       player.regions.forEach((region) => {
-        region.terrain = normalizeTerrain(region.terrain);
+        const next = normalizeTerrain(region.terrain);
+        if (region.terrain !== next) {
+          region.terrain = next;
+          dirty = true;
+        }
       });
     });
+
+    if (dirty) persist();
+  }
+
+  function randomKingName(excludeNames) {
+    const taken = new Set((excludeNames || []).map((n) => String(n).trim().toLowerCase()));
+    const pool = KING_NAMES.filter((n) => !taken.has(n.toLowerCase()));
+    const list = pool.length > 0 ? pool : KING_NAMES;
+    return list[Math.floor(Math.random() * list.length)];
+  }
+
+  function colorSwatchesHtml(player) {
+    const taken = takenColors(state.players, player.id);
+    return `
+      <div class="player__colors" role="radiogroup" aria-label="Колір гравця">
+        ${PLAYER_COLORS.map((c) => {
+          const selected = player.color === c.id;
+          const disabled = !selected && taken.has(c.id);
+          return `
+            <button
+              type="button"
+              class="color-swatch color-swatch--${c.id}${selected ? " is-selected" : ""}"
+              data-action="color"
+              data-color="${c.id}"
+              role="radio"
+              aria-checked="${selected ? "true" : "false"}"
+              aria-label="${c.label}${disabled ? " (зайнято)" : ""}"
+              ${disabled ? "disabled" : ""}
+              title="${c.label}${disabled ? " — зайнято" : ""}"
+            ></button>
+          `;
+        }).join("")}
+      </div>
+    `;
   }
 
   function showView(name) {
@@ -124,24 +222,41 @@
 
     state.players.forEach((player, index) => {
       const score = playerScore(player);
+      const color = normalizeColor(player.color) || "pink";
+      player.color = color;
       const li = document.createElement("li");
-      li.className = "player" + (maxScore > 0 && leaderIds.has(player.id) ? " is-leader" : "");
+      li.className =
+        "player player--" +
+        color +
+        (maxScore > 0 && leaderIds.has(player.id) ? " is-leader" : "");
       li.dataset.id = player.id;
 
       const canRemove = state.players.length > MIN_PLAYERS;
 
       li.innerHTML = `
-        <label class="player__label" for="player-name-${player.id}">Імʼя</label>
-        <input
-          id="player-name-${player.id}"
-          class="player__name"
-          type="text"
-          maxlength="24"
-          autocomplete="off"
-          aria-label="Імʼя гравця ${index + 1}"
-          value="${escapeAttr(player.name)}"
-        />
+        <div class="player__head">
+          <label class="player__label" for="player-name-${player.id}">Імʼя</label>
+          <button
+            type="button"
+            class="btn btn--text btn--name-dice"
+            data-action="random-name"
+            aria-label="Випадкове королівське імʼя"
+            title="Випадкове королівське імʼя"
+          >Випадково</button>
+        </div>
+        <div class="player__name-row">
+          <input
+            id="player-name-${player.id}"
+            class="player__name"
+            type="text"
+            maxlength="28"
+            autocomplete="off"
+            aria-label="Імʼя гравця ${index + 1}"
+            value="${escapeAttr(player.name)}"
+          />
+        </div>
         <span class="player__score">${score}</span>
+        ${colorSwatchesHtml(player)}
         <div class="player__meta">
           ${maxScore > 0 && leaderIds.has(player.id) ? '<span class="player__badge">Лідер</span>' : ""}
           <div class="player__actions">
@@ -230,8 +345,29 @@
 
   async function addPlayer() {
     if (state.players.length >= MAX_PLAYERS) return;
+    const color = nextAvailableColor(state.players);
+    if (!color) return;
     const n = state.players.length + 1;
-    state.players.push(createPlayer(`Гравець ${n}`));
+    state.players.push(createPlayer(`Гравець ${n}`, color, state.players));
+    persist();
+    renderPlayers();
+  }
+
+  function setPlayerColor(playerId, colorId) {
+    const player = state.players.find((p) => p.id === playerId);
+    const color = normalizeColor(colorId);
+    if (!player || !color) return;
+    if (takenColors(state.players, playerId).has(color)) return;
+    player.color = color;
+    persist();
+    renderPlayers();
+  }
+
+  function assignRandomName(playerId) {
+    const player = state.players.find((p) => p.id === playerId);
+    if (!player) return;
+    const others = state.players.filter((p) => p.id !== playerId).map((p) => p.name);
+    player.name = randomKingName(others);
     persist();
     renderPlayers();
   }
@@ -369,12 +505,14 @@
 
   els.playersList.addEventListener("click", (event) => {
     const btn = event.target.closest("[data-action]");
-    if (!btn) return;
+    if (!btn || btn.disabled) return;
     const li = btn.closest(".player");
     if (!li) return;
     const id = li.dataset.id;
     if (btn.dataset.action === "score") openScore(id);
     if (btn.dataset.action === "remove") removePlayer(id);
+    if (btn.dataset.action === "color") setPlayerColor(id, btn.dataset.color);
+    if (btn.dataset.action === "random-name") assignRandomName(id);
   });
 
   els.regionsList.addEventListener("input", (event) => {
