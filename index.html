@@ -1,10 +1,11 @@
 <!DOCTYPE html>
-<html lang="uk" data-theme="light">
+<html lang="uk" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="description" content="Простий помічник підрахунку очок Kingdomino українською." />
-    <meta name="theme-color" content="#e8f0e6" />
+    <meta name="theme-color" content="#121a16" />
+    <meta name="color-scheme" content="dark" />
     <title>Kingdomino · Підрахунок</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -54,15 +55,17 @@
       </section>
 
       <!-- SCORE -->
-      <section id="view-score" class="view" data-view="score" hidden>
+      <section id="view-score" class="view view--score" data-view="score" hidden>
         <header class="bar">
           <button type="button" class="btn btn--text" data-nav="table" aria-label="До столу">← Стіл</button>
           <h2 class="bar__title" id="score-player-name">Гравець</h2>
           <span class="bar__spacer"></span>
         </header>
 
-        <p class="formula">Очки = клітинки × корони в області</p>
-        <p class="total-line">Підсумок: <strong id="score-total">0</strong></p>
+        <div class="score-summary">
+          <p class="formula">Очки = клітинки × корони в області</p>
+          <p class="total-line">Підсумок: <strong id="score-total">0</strong></p>
+        </div>
 
         <ul class="regions" id="regions-list"></ul>
 

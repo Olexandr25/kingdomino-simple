@@ -33,7 +33,10 @@
 
   function regionHasInput(region) {
     if (!region) return false;
-    return clampInt(region.tiles, 0, 25, 0) > 0 || clampInt(region.crowns, 0, 25, 0) > 0;
+    const tiles = clampInt(region.tiles, 0, 25, 0);
+    const crowns = clampInt(region.crowns, 0, 25, 1);
+    // Default empty region is tiles=0, crowns=1 — not "entered" yet.
+    return tiles > 0 || crowns !== 1;
   }
 
   function playerHasInput(player) {
