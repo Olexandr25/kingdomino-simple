@@ -62,6 +62,7 @@
   --font-body: "Manrope", system-ui, sans-serif;
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --sticky-h: 3.75rem;
+  --touch: 2.75rem;
   --chrome-bg: #121a16;
 }
 
@@ -152,6 +153,15 @@ a:focus {
   padding: 0.75rem 0.85rem calc(var(--sticky-h) + 0.75rem + var(--safe-bottom));
 }
 
+/* Home has no sticky action bar — drop reserved bottom space to avoid scroll bounce */
+.app:has(.view--home.is-active) {
+  padding-bottom: 1rem;
+}
+
+.view {
+  margin: 0;
+}
+
 .view[hidden] {
   display: none !important;
 }
@@ -175,8 +185,10 @@ a:focus {
 .view--home {
   display: flex;
   align-items: center;
-  min-height: calc(100dvh - 1.5rem);
-  padding: 1rem 0 2rem;
+  margin: 0;
+  min-height: calc(100dvh - 2rem);
+  padding: 0.5rem 0;
+  overflow: hidden;
 }
 
 .hero {
@@ -258,33 +270,47 @@ a:focus {
   border-radius: var(--radius);
   background: var(--accent-soft);
   color: var(--ink);
-  border: 1px solid rgba(154, 107, 18, 0.28);
+  border: 1px solid rgba(212, 160, 23, 0.35);
   font-size: 0.92rem;
+}
+
+/* Empty / all-zero hint — neutral so it does not look like a leader status */
+.lead.is-hint {
+  background: var(--surface-soft);
+  border-color: var(--line);
+  color: var(--ink-muted);
 }
 
 .lead.is-tie {
   background: var(--surface-soft);
   border-color: var(--line);
+  color: var(--ink);
 }
 
-.view--score .bar {
+/* One sticky stack: nav bar + live total — avoids offset guessing when button height changes */
+.score-chrome {
   position: sticky;
   top: 0;
   z-index: 4;
-  margin: 0 0 0.4rem;
-  padding: 0.25rem 0 0.4rem;
-  background: var(--chrome-bg);
+  margin: 0 0 0.55rem;
+  padding: 0.1rem 0 0.55rem;
+  background: color-mix(in srgb, var(--chrome-bg) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+
+.view--score .bar {
+  position: static;
+  margin: 0 0 0.35rem;
+  padding: 0;
 }
 
 .score-summary {
-  position: sticky;
-  top: 2.55rem;
-  z-index: 3;
+  position: static;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: 0 0 0.65rem;
+  margin: 0;
   padding: 0.45rem 0.65rem;
   border-radius: var(--radius);
   background: var(--surface-raised);
@@ -314,13 +340,25 @@ a:focus {
   margin-left: 0.2rem;
 }
 
+.score-hint {
+  margin: 0 0 0.55rem;
+  padding: 0;
+  color: var(--ink-muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.score-hint[hidden] {
+  display: none !important;
+}
+
 /* Buttons — compact mobile targets; beat Pico blue primary */
 .btn {
   appearance: none;
   border: 1px solid transparent;
   border-radius: 10px;
   padding: 0.55rem 0.85rem;
-  min-height: 2.4rem;
+  min-height: var(--touch);
   font-weight: 600;
   font-size: 0.92rem;
   transition: transform 0.15s ease, background 0.15s ease, opacity 0.15s ease, border-color 0.15s ease;
@@ -330,6 +368,11 @@ a:focus {
   text-decoration: none;
   line-height: 1.15;
   box-shadow: none;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--success);
+  outline-offset: 2px;
 }
 
 .btn:active {
@@ -386,8 +429,8 @@ button.btn--primary:is(:hover, :focus, :active),
 .btn--text {
   background: transparent !important;
   color: var(--ink-muted) !important;
-  padding: 0.3rem 0.15rem;
-  min-height: auto;
+  padding: 0.45rem 0.2rem;
+  min-height: var(--touch);
   min-width: 3.75rem;
   text-align: left;
   border: none !important;
@@ -422,15 +465,15 @@ button.btn--primary:is(:hover, :focus, :active),
 }
 
 .btn--icon {
-  width: 2.15rem;
-  height: 2.15rem;
-  min-width: 2.15rem;
-  min-height: 2.15rem;
+  width: var(--touch);
+  height: var(--touch);
+  min-width: var(--touch);
+  min-height: var(--touch);
   padding: 0;
   border-radius: 9px;
   background: rgba(228, 239, 230, 0.08) !important;
   color: var(--ink-muted) !important;
-  font-size: 1.05rem;
+  font-size: 1.15rem;
   line-height: 1;
   border: none !important;
 }
@@ -441,8 +484,8 @@ button.btn--primary:is(:hover, :focus, :active),
 }
 
 .btn--compact {
-  padding: 0.45rem 0.7rem;
-  min-height: 2.15rem;
+  padding: 0.5rem 0.75rem;
+  min-height: var(--touch);
   font-size: 0.86rem;
 }
 
@@ -515,7 +558,7 @@ button.btn--primary:is(:hover, :focus, :active),
   background: #15201b;
   color: var(--ink);
   height: auto;
-  min-height: 2.15rem;
+  min-height: var(--touch);
 }
 
 .player__name:focus {
@@ -563,34 +606,39 @@ button.btn--primary:is(:hover, :focus, :active),
 }
 
 /* Regions — compact fields, stay above sticky bar */
+.regions {
+  min-height: 4.5rem;
+}
+
 .region {
   display: grid;
-  grid-template-columns: minmax(0, 1.35fr) minmax(3.2rem, 0.6fr) minmax(3.2rem, 0.6fr) auto auto;
-  gap: 0.25rem 0.3rem;
+  grid-template-columns: minmax(0, 1.35fr) minmax(3.5rem, 0.65fr) minmax(3.5rem, 0.65fr) auto auto;
+  gap: 0.3rem 0.4rem;
   align-items: end;
-  padding: 0.4rem 0.45rem;
+  min-height: 4.35rem;
+  padding: 0.45rem 0.5rem;
   border-radius: var(--radius);
   background: var(--surface-raised);
   box-shadow: var(--shadow);
   border: 1px solid var(--line);
   scroll-margin-bottom: calc(var(--sticky-h) + 0.75rem + var(--safe-bottom));
-  scroll-margin-top: 6rem;
+  scroll-margin-top: 7.5rem;
 }
 
 .field {
   display: grid;
-  gap: 0.15rem;
+  gap: 0.2rem;
   margin: 0;
   min-width: 0;
 }
 
 .field label {
   margin: 0;
-  font-size: 0.65rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--ink-muted);
+  color: color-mix(in srgb, var(--ink-muted) 82%, var(--ink));
 }
 
 .field input,
@@ -598,13 +646,13 @@ button.btn--primary:is(:hover, :focus, :active),
   width: 100%;
   border: 1px solid var(--line);
   border-radius: 8px;
-  padding: 0.4rem 0.4rem;
+  padding: 0.45rem 0.45rem;
   background: rgba(10, 16, 13, 0.55);
   color: var(--ink);
   height: auto;
-  min-height: 2.1rem;
+  min-height: var(--touch);
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .field input:focus,
@@ -615,7 +663,8 @@ button.btn--primary:is(:hover, :focus, :active),
 }
 
 .region .btn--icon {
-  margin-bottom: 0.05rem;
+  margin-bottom: 0;
+  margin-left: 0.1rem;
 }
 
 .region__points {
@@ -623,11 +672,11 @@ button.btn--primary:is(:hover, :focus, :active),
   flex-direction: column;
   align-items: flex-end;
   justify-content: flex-end;
-  gap: 0.1rem;
-  min-width: 2.4rem;
-  padding-bottom: 0.35rem;
-  color: var(--ink-muted);
-  font-size: 0.62rem;
+  gap: 0.15rem;
+  min-width: 2.6rem;
+  padding-bottom: 0.55rem;
+  color: color-mix(in srgb, var(--ink-muted) 75%, var(--ink));
+  font-size: 0.68rem;
   font-weight: 600;
   letter-spacing: 0.03em;
   text-transform: uppercase;
@@ -636,7 +685,7 @@ button.btn--primary:is(:hover, :focus, :active),
 
 .region__points strong {
   font-family: var(--font-display);
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   color: var(--region-accent, var(--success));
   letter-spacing: 0;
@@ -663,21 +712,21 @@ button.btn--primary:is(:hover, :focus, :active),
 }
 
 .region--swamp {
-  --region-accent: #9caf6e;
-  background: linear-gradient(135deg, #24301f 0%, #2e3c26 55%, #3a3420 100%);
-  border-color: rgba(156, 175, 110, 0.4);
+  --region-accent: #b0c478;
+  background: linear-gradient(135deg, #28321f 0%, #2e3c26 55%, #3a3420 100%);
+  border-color: rgba(176, 196, 120, 0.45);
 }
 
 .region--mine {
-  --region-accent: #c4b8a8;
-  background: linear-gradient(135deg, #2a2c2d 0%, #343638 100%);
-  border-color: rgba(196, 184, 168, 0.34);
+  --region-accent: #d2c4b0;
+  background: linear-gradient(135deg, #323436 0%, #3d3f42 100%);
+  border-color: rgba(210, 196, 176, 0.42);
 }
 
 .region--pasture {
-  --region-accent: #a8d47a;
+  --region-accent: #b4dc86;
   background: linear-gradient(135deg, #2a3a1c 0%, #334522 100%);
-  border-color: rgba(168, 212, 122, 0.36);
+  border-color: rgba(180, 220, 134, 0.4);
 }
 
 /* Rules */
@@ -799,6 +848,6 @@ button.btn--primary:is(:hover, :focus, :active),
   }
 
   .region {
-    grid-template-columns: minmax(0, 1.4fr) minmax(3.4rem, 0.6fr) minmax(3.4rem, 0.6fr) auto auto;
+    grid-template-columns: minmax(0, 1.4fr) minmax(3.6rem, 0.65fr) minmax(3.6rem, 0.65fr) auto auto;
   }
 }

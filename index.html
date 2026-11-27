@@ -44,7 +44,7 @@
           <button type="button" class="btn btn--text btn--danger-text" id="btn-reset">Скинути</button>
         </header>
 
-        <p class="lead" id="leader-banner" role="status">Поки всі мають 0 — введіть області.</p>
+        <p class="lead is-hint" id="leader-banner" role="status">Поки всі мають 0 — відкрийте «Підрахунок» і введіть області.</p>
 
         <ul class="players" id="players-list" aria-live="polite"></ul>
 
@@ -56,22 +56,29 @@
 
       <!-- SCORE -->
       <section id="view-score" class="view view--score" data-view="score" hidden>
-        <header class="bar">
-          <button type="button" class="btn btn--text" data-nav="table" aria-label="До столу">← Стіл</button>
-          <h2 class="bar__title" id="score-player-name">Гравець</h2>
-          <span class="bar__spacer"></span>
-        </header>
+        <div class="score-chrome">
+          <header class="bar">
+            <button type="button" class="btn btn--text" data-nav="table" aria-label="До столу">← Стіл</button>
+            <h2 class="bar__title" id="score-player-name">Гравець</h2>
+            <span class="bar__spacer"></span>
+          </header>
 
-        <div class="score-summary">
-          <p class="formula">Очки = клітинки × корони в області</p>
-          <p class="total-line">Підсумок: <strong id="score-total">0</strong></p>
+          <div class="score-summary">
+            <p class="formula">Очки = клітинки × корони в області</p>
+            <p class="total-line">
+              Підсумок:
+              <strong id="score-total" aria-live="polite">0</strong>
+            </p>
+          </div>
         </div>
 
-        <ul class="regions" id="regions-list"></ul>
+        <p class="score-hint" id="score-hint">Вкажіть клітинки й корони для кожної області. Підсумок оновлюється одразу.</p>
+
+        <ul class="regions" id="regions-list" aria-label="Області гравця"></ul>
 
         <div class="sticky-actions">
           <button type="button" class="btn btn--secondary" id="btn-add-region">+ Область</button>
-          <button type="button" class="btn btn--primary" id="btn-save-score">Зберегти</button>
+          <button type="button" class="btn btn--primary" id="btn-save-score">Готово</button>
         </div>
       </section>
 
@@ -115,7 +122,7 @@
       </section>
     </main>
 
-    <dialog id="confirm-dialog" class="dialog">
+    <dialog id="confirm-dialog" class="dialog" aria-labelledby="confirm-message">
       <form method="dialog" class="dialog__inner">
         <p id="confirm-message" class="dialog__message"></p>
         <div class="dialog__actions">

@@ -6,6 +6,7 @@
     normalizeTerrain,
     regionScore,
     playerScore,
+    regionHasInput,
     playerHasInput,
     comparePlayers,
   } = KingdominoScoring;
@@ -25,6 +26,7 @@
     leaderBanner: document.getElementById("leader-banner"),
     scorePlayerName: document.getElementById("score-player-name"),
     scoreTotal: document.getElementById("score-total"),
+    scoreHint: document.getElementById("score-hint"),
     btnAddPlayer: document.getElementById("btn-add-player"),
     btnAddRegion: document.getElementById("btn-add-region"),
     btnSaveScore: document.getElementById("btn-save-score"),
@@ -89,6 +91,8 @@
 
   function renderLeaderBanner() {
     const { leaders, maxScore, isTie } = comparePlayers(state.players);
+    const isHint = state.players.length === 0 || maxScore === 0;
+    els.leaderBanner.classList.toggle("is-hint", isHint);
     els.leaderBanner.classList.toggle("is-tie", isTie && maxScore > 0);
 
     if (state.players.length === 0) {
@@ -97,13 +101,13 @@
     }
 
     if (maxScore === 0) {
-      els.leaderBanner.textContent = "Поки всі мають 0 — введіть області.";
+      els.leaderBanner.textContent = "Поки всі мають 0 — відкрийте «Підрахунок» і введіть області.";
       return;
     }
 
     if (isTie) {
       const names = leaders.map((l) => l.name).join(", ");
-      els.leaderBanner.textContent = `Нічия: ${names} — по ${maxScore}.`;
+      els.leaderBanner.textContent = `Нічия: ${names} — по ${maxScore} оч.`;
       return;
     }
 
@@ -137,7 +141,7 @@
           aria-label="Імʼя гравця ${index + 1}"
           value="${escapeAttr(player.name)}"
         />
-        <span class="player__score" aria-label="Очки">${score}</span>
+        <span class="player__score">${score}</span>
         <div class="player__meta">
           ${maxScore > 0 && leaderIds.has(player.id) ? '<span class="player__badge">Лідер</span>' : ""}
           <div class="player__actions">
@@ -175,6 +179,7 @@
 
     els.scorePlayerName.textContent = player.name.trim() || "Гравець";
     els.scoreTotal.textContent = String(playerScore(player));
+    updateScoreHint(player);
     els.regionsList.innerHTML = "";
 
     const canRemoveRegion = player.regions.length > 1;
@@ -188,17 +193,17 @@
       li.innerHTML = `
         <div class="field field--terrain">
           <label for="terrain-${region.id}">Місцевість</label>
-          <select id="terrain-${region.id}" data-field="terrain" required>${terrainOptions(region.terrain)}</select>
+          <select id="terrain-${region.id}" data-field="terrain" required aria-label="Місцевість області ${index + 1}">${terrainOptions(region.terrain)}</select>
         </div>
         <div class="field">
           <label for="tiles-${region.id}">Клітинки</label>
-          <input id="tiles-${region.id}" data-field="tiles" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.tiles, 0, 25, 0)}" />
+          <input id="tiles-${region.id}" data-field="tiles" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.tiles, 0, 25, 0)}" aria-label="Клітинки області ${index + 1}" />
         </div>
         <div class="field">
           <label for="crowns-${region.id}">Корони</label>
-          <input id="crowns-${region.id}" data-field="crowns" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.crowns, 0, 25, 1)}" />
+          <input id="crowns-${region.id}" data-field="crowns" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.crowns, 0, 25, 1)}" aria-label="Корони області ${index + 1}" />
         </div>
-        <div class="region__points" aria-label="Очки області">
+        <div class="region__points">
           <span>Очки</span>
           <strong>${regionScore(region)}</strong>
         </div>
@@ -207,6 +212,12 @@
 
       els.regionsList.appendChild(li);
     });
+  }
+
+  function updateScoreHint(player) {
+    if (!els.scoreHint) return;
+    const hasAnyInput = (player.regions || []).some(regionHasInput) || playerScore(player) > 0;
+    els.scoreHint.hidden = hasAnyInput;
   }
 
   function escapeAttr(value) {
@@ -259,12 +270,17 @@
   function addRegion() {
     const player = getActivePlayer();
     if (!player) return;
-    player.regions.push(createRegion());
+    const prev = player.regions[player.regions.length - 1];
+    const next = createRegion();
+    if (prev) next.terrain = normalizeTerrain(prev.terrain);
+    player.regions.push(next);
     persist();
     renderRegions();
     const last = els.regionsList.lastElementChild;
     if (last) {
       last.scrollIntoView({ block: "nearest", behavior: "smooth" });
+      const tilesInput = last.querySelector('[data-field="tiles"]');
+      if (tilesInput) tilesInput.focus();
     }
   }
 
@@ -382,6 +398,7 @@
 
     persist();
     els.scoreTotal.textContent = String(playerScore(player));
+    updateScoreHint(player);
     const sub = li.querySelector(".region__points strong");
     if (sub) sub.textContent = String(regionScore(region));
   });
