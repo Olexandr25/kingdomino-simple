@@ -141,7 +141,7 @@
         <div class="player__meta">
           ${maxScore > 0 && leaderIds.has(player.id) ? '<span class="player__badge">Лідер</span>' : ""}
           <div class="player__actions">
-            <button type="button" class="btn btn--secondary" data-action="score">Підрахунок</button>
+            <button type="button" class="btn btn--secondary btn--compact" data-action="score">Підрахунок</button>
             <button type="button" class="btn btn--icon" data-action="remove" aria-label="Видалити гравця" ${canRemove ? "" : "disabled"}>×</button>
           </div>
         </div>
@@ -181,9 +181,9 @@
 
     player.regions.forEach((region, index) => {
       const li = document.createElement("li");
-      li.className = "region";
-      li.dataset.id = region.id;
       region.terrain = normalizeTerrain(region.terrain);
+      li.className = `region region--${region.terrain}`;
+      li.dataset.id = region.id;
 
       li.innerHTML = `
         <div class="field field--terrain">
@@ -196,10 +196,13 @@
         </div>
         <div class="field">
           <label for="crowns-${region.id}">Корони</label>
-          <input id="crowns-${region.id}" data-field="crowns" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.crowns, 0, 25, 0)}" />
+          <input id="crowns-${region.id}" data-field="crowns" type="number" inputmode="numeric" min="0" max="25" value="${clampInt(region.crowns, 0, 25, 1)}" />
+        </div>
+        <div class="region__points" aria-label="Очки області">
+          <span>Очки</span>
+          <strong>${regionScore(region)}</strong>
         </div>
         <button type="button" class="btn btn--icon" data-action="remove-region" aria-label="Видалити область ${index + 1}" ${canRemoveRegion ? "" : "disabled"}>×</button>
-        <p class="region__sub">Очки області: <strong>${regionScore(region)}</strong></p>
       `;
 
       els.regionsList.appendChild(li);
@@ -259,6 +262,10 @@
     player.regions.push(createRegion());
     persist();
     renderRegions();
+    const last = els.regionsList.lastElementChild;
+    if (last) {
+      last.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    }
   }
 
   async function removeRegion(regionId) {
@@ -366,16 +373,23 @@
     const key = field.dataset.field;
     if (key === "terrain") {
       region.terrain = normalizeTerrain(field.value);
+      li.className = `region region--${region.terrain}`;
     } else if (key === "tiles") {
       region.tiles = clampInt(field.value, 0, 25, 0);
     } else if (key === "crowns") {
-      region.crowns = clampInt(field.value, 0, 25, 0);
+      region.crowns = clampInt(field.value, 0, 25, 1);
     }
 
     persist();
     els.scoreTotal.textContent = String(playerScore(player));
-    const sub = li.querySelector(".region__sub strong");
+    const sub = li.querySelector(".region__points strong");
     if (sub) sub.textContent = String(regionScore(region));
+  });
+
+  els.regionsList.addEventListener("focusin", (event) => {
+    const input = event.target.closest('input[type="number"]');
+    if (!input) return;
+    requestAnimationFrame(() => input.select());
   });
 
   els.regionsList.addEventListener("change", (event) => {

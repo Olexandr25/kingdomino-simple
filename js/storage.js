@@ -12,7 +12,7 @@
       id: crypto.randomUUID(),
       terrain: DEFAULT_TERRAIN,
       tiles: 0,
-      crowns: 0,
+      crowns: 1,
     };
   }
 
@@ -58,8 +58,8 @@
     return {
       id: region.id || crypto.randomUUID(),
       terrain,
-      tiles: Number.isNaN(tiles) ? 0 : tiles,
-      crowns: Number.isNaN(crowns) ? 0 : crowns,
+      tiles: Number.isNaN(tiles) ? 0 : Math.max(0, tiles),
+      crowns: Number.isNaN(crowns) ? 1 : Math.max(0, crowns),
     };
   }
 
